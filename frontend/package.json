@@ -1,0 +1,24 @@
+{
+  "name": "vidnest-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "latest",
+    "lucide-vue-next": "^0.468.0",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8",
+    "vue-tsc": "^2.2.0"
+  }
+}

@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      VIDNEST_DOWNLOAD_DIR: /data/downloads
+      VIDNEST_ALLOWED_HOSTS: ${VIDNEST_ALLOWED_HOSTS:-}
+      VIDNEST_MAX_FILE_SIZE_MB: ${VIDNEST_MAX_FILE_SIZE_MB:-2048}
+      VIDNEST_MAX_CONCURRENT_DOWNLOADS: ${VIDNEST_MAX_CONCURRENT_DOWNLOADS:-2}
+    volumes:
+      - vidnest-downloads:/data/downloads
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports:
+      - "${VIDNEST_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  vidnest-downloads:

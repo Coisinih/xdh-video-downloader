@@ -1,0 +1,5 @@
+﻿export type Format = { id: string; label: string; ext: string; resolution?: string; filesize?: number; codec?: string; direct_available: boolean }
+export type Inspection = { inspection_id: string; title: string; thumbnail?: string; duration?: number; formats: Format[]; expires_at: string }
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> { const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options }); if (!response.ok) { const data = await response.json().catch(() => null); throw new Error(data?.detail || '请求失败，请稍后重试。') }; return response.json() as Promise<T> }
+export const inspect = (url: string) => request<Inspection>('/api/v1/inspections', { method: 'POST', body: JSON.stringify({ url }) })
+export const createDownload = (inspection_id: string, format_id: string) => request<{ mode: string; delivery_url?: string }>('/api/v1/downloads', { method: 'POST', body: JSON.stringify({ inspection_id, format_id, mode: 'direct' }) })
