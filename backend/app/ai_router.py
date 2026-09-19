@@ -1,14 +1,16 @@
 import asyncio
 import json
+from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import Response, StreamingResponse
 
 from .ai_config import ai_settings
 from .ai_deepseek import answer_question, generate_summary, stream_summary_markdown
 from .ai_models import AnswerResponse, QuestionRequest, SubtitleTracksResponse, SummaryRequest, SummaryTaskResponse, TaskStatus, TranscriptResponse
 from .ai_store import AiMemoryStore, AiSummaryTask
-from .ai_subtitles import ResolvedTrack, discover_tracks, fetch_transcript
+from .ai_subtitles import ResolvedTrack, discover_tracks, fetch_transcript, subtitles_to_srt, subtitles_to_txt
+from .security import safe_filename
 from .store import now
 
 router = APIRouter(prefix="/api/v1/ai", tags=["ai-learning"])
@@ -70,6 +72,33 @@ async def transcript(request: Request, inspection_id: str, subtitle_id: str):
     if not track:
         raise HTTPException(404, "字幕轨道不存在")
     return TranscriptResponse(track=track.public, cues=await fetch_transcript(track))
+
+
+@router.get("/inspections/{inspection_id}/subtitle-tracks/{subtitle_id}/download")
+async def download_subtitle(request: Request, inspection_id: str, subtitle_id: str, format: str = Query(default="srt", pattern="^(srt|txt)$")):
+    inspection = _inspection(request, inspection_id)
+    tracks = await _get_tracks(request, inspection_id)
+    track = next((item for item in tracks if item.public.id == subtitle_id), None)
+    if not track:
+        raise HTTPException(404, "字幕轨道不存在")
+    extension = format.lower()
+    filename = safe_filename(f"{inspection.title}.{track.public.language}.{extension}")
+    encoded_filename = quote(filename, safe="")
+    cues = await fetch_transcript(track)
+    if extension == "txt":
+        content = subtitles_to_txt(cues)
+        media_type = "text/plain; charset=utf-8"
+    else:
+        content = subtitles_to_srt(cues)
+        media_type = "application/x-subrip; charset=utf-8"
+    return Response(
+        content=content.encode("utf-8"),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename=\"subtitles.srt\"; filename*=UTF-8''{encoded_filename}",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.post("/summaries", response_model=SummaryTaskResponse)

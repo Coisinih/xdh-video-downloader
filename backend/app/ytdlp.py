@@ -41,20 +41,52 @@ async def run_command(args: list[str], timeout: int) -> tuple[str, str]:
 
 
 def to_formats(payload: dict) -> tuple[list[FormatInfo], dict[str, tuple[str, dict[str, str]]]]:
-    formats: list[FormatInfo] = []
+    """Return one dependable stream for each commonly used video resolution.
+
+    Extractors commonly expose the same resolution many times for different
+    codecs, protocols and bitrates.  Showing every raw stream makes the
+    download choice needlessly confusing, so the public contract deliberately
+    exposes only the four resolutions supported by the product.
+    """
+    supported_heights = (1080, 720, 480, 360)
+    candidates: dict[int, dict] = {}
     sources: dict[str, tuple[str, dict[str, str]]] = {}
     for item in payload.get("formats", []):
         if item.get("vcodec") == "none" or not item.get("url"):
             continue
+        height = item.get("height")
+        if height not in supported_heights:
+            continue
         format_id = str(item.get("format_id", ""))
         if not format_id:
             continue
-        resolution = f"{item.get('width')}x{item.get('height')}" if item.get("height") else None
-        ext = item.get("ext", "mp4")
-        formats.append(FormatInfo(id=format_id, label=item.get("format_note") or resolution or ext.upper(), ext=ext, resolution=resolution, filesize=item.get("filesize") or item.get("filesize_approx"), codec=item.get("vcodec"), direct_available=True))
+        previous = candidates.get(height)
+        # Prefer MP4 and muxed streams, then choose the larger bitrate/file.
+        # The final format-id comparison makes the result deterministic when
+        # metadata is otherwise identical.
+        def score(value: dict) -> tuple[int, int, float, int, str]:
+            return (
+                int(str(value.get("ext", "")).lower() == "mp4"),
+                int(value.get("acodec") not in {None, "none"}),
+                float(value.get("tbr") or 0),
+                int(value.get("filesize") or value.get("filesize_approx") or 0),
+                str(value.get("format_id", "")),
+            )
+        if previous is None or score(item) > score(previous):
+            candidates[height] = item
+
+    formats: list[FormatInfo] = []
+    for height in supported_heights:
+        item = candidates.get(height)
+        if not item:
+            continue
+        format_id = str(item["format_id"])
+        resolution = f"{item.get('width')}x{height}" if item.get("width") else f"{height}P"
+        ext = str(item.get("ext") or "mp4")
+        formats.append(FormatInfo(id=format_id, label=f"{height}P", ext=ext, resolution=resolution, filesize=item.get("filesize") or item.get("filesize_approx"), codec=item.get("vcodec"), direct_available=True))
         headers = {str(key): str(value) for key, value in (item.get("http_headers") or {}).items() if str(key).lower() in {"referer", "user-agent", "origin"}}
-        sources[format_id] = (item["url"], headers)
-    return formats[:20], sources
+        sources[format_id] = (str(item["url"]), headers)
+    return formats, sources
 
 
 async def inspect(url: str) -> tuple[str, str | None, int | None, list[FormatInfo], dict[str, tuple[str, dict[str, str]]]]:

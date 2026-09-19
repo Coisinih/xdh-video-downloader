@@ -38,3 +38,16 @@ cd backend && python -m pytest tests -q
 cd frontend && npm run test -- --run
 cd frontend && npm run build
 ```
+
+## 字幕与思维导图导出
+
+字幕页支持将当前轨道下载为 UTF-8 `SRT` 或 `TXT`。SRT 使用标准的
+`HH:MM:SS,mmm` 时间戳，文件名会根据视频标题、语言和格式生成，并通过
+`Content-Disposition` 的 UTF-8 文件名参数交付。
+
+思维导图页支持缩放和拖动、全屏查看、复制 Mermaid、下载 SVG，以及下载高清
+PNG。图表加载失败时仍保留结构化大纲作为降级内容；全屏弹窗支持 Esc 关闭并
+恢复触发按钮焦点。
+
+视频格式列表由 `backend/app/ytdlp.py` 统一筛选为 1080P、720P、480P、360P，
+每个分辨率只保留一个候选，优先 MP4、带音频和较高码率的媒体流。

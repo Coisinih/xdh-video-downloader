@@ -16,6 +16,15 @@ export type Answer = { answer: string; citations: Citation[]; created_at: string
 
 export const getSubtitleTracks = (inspectionId: string) => request<{ tracks: SubtitleTrack[] }>(`/api/v1/ai/inspections/${encodeURIComponent(inspectionId)}/subtitle-tracks`)
 export const getTranscript = (inspectionId: string, trackId: string) => request<{ track: SubtitleTrack; cues: TranscriptCue[] }>(`/api/v1/ai/inspections/${encodeURIComponent(inspectionId)}/subtitle-tracks/${encodeURIComponent(trackId)}`)
+export type SubtitleDownloadFormat = "srt" | "txt"
+export const downloadSubtitle = async (inspectionId: string, trackId: string, format: SubtitleDownloadFormat): Promise<Blob> => {
+  const response = await fetch(`/api/v1/ai/inspections/${encodeURIComponent(inspectionId)}/subtitle-tracks/${encodeURIComponent(trackId)}/download?format=${format}`)
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new Error(data?.detail || "字幕下载失败，请稍后重试。")
+  }
+  return response.blob()
+}
 export const createSummary = (inspectionId: string, subtitleId: string) => request<SummaryTask>('/api/v1/ai/summaries', { method: 'POST', body: JSON.stringify({ inspection_id: inspectionId, subtitle_id: subtitleId }) })
 export const getSummary = (summaryId: string) => request<SummaryTask>(`/api/v1/ai/summaries/${encodeURIComponent(summaryId)}`)
 export async function streamSummary(summaryId: string, onDelta: (text: string) => void): Promise<void> {

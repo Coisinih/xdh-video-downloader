@@ -66,6 +66,16 @@ async def test_ai_learning_api_flow_with_mocked_external_services(monkeypatch):
             assert transcript_response.status_code == 200
             assert transcript_response.json()["cues"][0]["text"] == cues[0].text
 
+            downloaded_subtitle = await client.get(f"/api/v1/ai/inspections/{inspection.id}/subtitle-tracks/manual:zh-CN/download")
+            assert downloaded_subtitle.status_code == 200
+            assert downloaded_subtitle.headers["content-type"].startswith("application/x-subrip")
+            assert "attachment" in downloaded_subtitle.headers["content-disposition"]
+            assert "00:00:00,000 --> 00:00:05,000" in downloaded_subtitle.text
+            downloaded_text = await client.get(f"/api/v1/ai/inspections/{inspection.id}/subtitle-tracks/manual:zh-CN/download?format=txt")
+            assert downloaded_text.status_code == 200
+            assert downloaded_text.headers["content-type"].startswith("text/plain")
+            assert downloaded_text.text == "这是第一个知识点\n这是第二个知识点\n"
+
             created = await client.post("/api/v1/ai/summaries", json={"inspection_id": inspection.id, "subtitle_id": track.public.id})
             assert created.status_code == 200
             summary_id = created.json()["id"]

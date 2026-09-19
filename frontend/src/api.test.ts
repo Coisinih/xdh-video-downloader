@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSummary, getSubtitleTracks, inspect } from './api'
+import { createSummary, downloadSubtitle, getSubtitleTracks, inspect } from './api'
 
 describe('inspection API', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -23,5 +23,13 @@ describe('inspection API', () => {
     vi.stubGlobal('fetch', fetchMock)
     await createSummary('i1', 'manual:zh-CN')
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/ai/summaries', expect.objectContaining({ method: 'POST', body: JSON.stringify({ inspection_id: 'i1', subtitle_id: 'manual:zh-CN' }) }))
+  })
+
+  it('downloads an SRT subtitle blob for a subtitle track', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('subtitle', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const blob = await downloadSubtitle('i 1', 'manual:zh-CN', 'srt')
+    expect(blob).toBeInstanceOf(Blob)
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/ai/inspections/i%201/subtitle-tracks/manual%3Azh-CN/download?format=srt')
   })
 })

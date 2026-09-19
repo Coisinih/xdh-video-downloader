@@ -218,6 +218,26 @@ def parse_subtitles(content: str) -> list[TranscriptCue]:
     return cues
 
 
+def _srt_timestamp(seconds: float) -> str:
+    milliseconds = max(0, round(seconds * 1000))
+    hours, remainder = divmod(milliseconds, 3_600_000)
+    minutes, remainder = divmod(remainder, 60_000)
+    whole_seconds, milliseconds = divmod(remainder, 1000)
+    return f"{hours:02}:{minutes:02}:{whole_seconds:02},{milliseconds:03}"
+
+
+def subtitles_to_srt(cues: list[TranscriptCue]) -> str:
+    """Produce a portable UTF-8 SRT document from validated transcript cues."""
+    return "\n\n".join(
+        f"{index}\n{_srt_timestamp(cue.start)} --> {_srt_timestamp(cue.end)}\n{cue.text}"
+        for index, cue in enumerate(cues, start=1)
+    ) + ("\n" if cues else "")
+
+def subtitles_to_txt(cues: list[TranscriptCue]) -> str:
+    """Produce a plain UTF-8 transcript for note-taking and summarisation."""
+    return "\n".join(cue.text for cue in cues) + ("\n" if cues else "")
+
+
 async def fetch_transcript(track: ResolvedTrack) -> list[TranscriptCue]:
     validate_source_url(track.url)
     async with httpx.AsyncClient(follow_redirects=True, timeout=ai_settings.ai_subtitle_timeout_seconds) as client:
