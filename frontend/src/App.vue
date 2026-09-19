@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { ArrowDownToLine, CheckCircle2, Clipboard, Download, FileVideo, Link, LoaderCircle, ShieldCheck, Sparkles } from 'lucide-vue-next'
 import { createDownload, inspect, type Format, type Inspection } from './api'
+import AiLearningWorkspace from './components/AiLearningWorkspace.vue'
 const url = ref(''); const inspection = ref<Inspection | null>(null); const selectedFormat = ref<Format | null>(null); const pending = ref(false); const error = ref(''); const thumbnailFailed = ref(false)
 const duration = computed(() => inspection.value?.duration ? `${Math.floor(inspection.value.duration / 60)}:${String(inspection.value.duration % 60).padStart(2, '0')}` : '时长未知')
 const size = (bytes?: number) => !bytes ? '大小待定' : `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -33,6 +34,7 @@ async function startDownload() { if (!inspection.value || !selectedFormat.value)
       <fieldset><legend>选择格式</legend><div class="formats"><button v-for="format in inspection.formats" :key="format.id" type="button" class="format" :class="{ selected: selectedFormat?.id === format.id }" @click="selectedFormat = format"><strong>{{ format.resolution || format.label }}</strong><span>{{ format.ext.toUpperCase() }} · {{ size(format.filesize) }}</span><CheckCircle2 v-if="selectedFormat?.id === format.id" :size="18"/></button></div></fieldset>
       <button class="primary download" type="button" :disabled="pending" @click="startDownload"><Download :size="20"/>浏览器下载</button>
     </section>
+    <AiLearningWorkspace v-if="inspection" :inspection="inspection" />
     <footer><span>VidNest MVP</span><span>浏览器直接下载 · 无需账号</span></footer>
   </main>
 </template>

@@ -11,6 +11,9 @@
   "dependencies": {
     "@vitejs/plugin-vue": "latest",
     "lucide-vue-next": "^0.468.0",
+    "markmap-lib": "^0.18.12",
+    "markmap-view": "^0.18.12",
+    "mermaid": "^11.12.2",
     "pinia": "^2.3.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"

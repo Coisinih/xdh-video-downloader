@@ -11,6 +11,7 @@ from .models import DownloadMode, DownloadRequest, DownloadResponse, InspectionR
 from .security import normalize_video_url, safe_filename, validate_source_url
 from .store import Delivery, Inspection, MemoryStore, Task, now
 from . import ytdlp
+from .ai_router import router as ai_router
 
 store = MemoryStore(settings.ttl_seconds)
 download_semaphore = asyncio.Semaphore(settings.max_concurrent_downloads)
@@ -23,6 +24,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="VidNest API", version="1.0.0", lifespan=lifespan)
+app.state.vidnest_store = store
+app.include_router(ai_router)
 
 
 @app.get("/api/v1/health")
