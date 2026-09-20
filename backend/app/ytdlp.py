@@ -4,7 +4,9 @@ import os
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import HTTPException
 
 from .config import settings
@@ -89,7 +91,7 @@ def to_formats(payload: dict) -> tuple[list[FormatInfo], dict[str, tuple[str, di
     return formats, sources
 
 
-async def inspect(url: str) -> tuple[str, str | None, int | None, list[FormatInfo], dict[str, tuple[str, dict[str, str]]]]:
+async def inspect(url: str) -> tuple[str, str | None, int | None, str | None, str | None, str | None, int | None, list[FormatInfo], dict[str, tuple[str, dict[str, str]]]]:
     stdout, _ = await run_command(ytdlp_command("--no-playlist", "--skip-download", "--dump-single-json", url), settings.inspection_timeout_seconds)
     try:
         data = json.loads(stdout)
@@ -98,7 +100,67 @@ async def inspect(url: str) -> tuple[str, str | None, int | None, list[FormatInf
     formats, sources = to_formats(data)
     if not formats:
         raise HTTPException(422, "No downloadable video formats found")
-    return data.get("title") or "Untitled video", data.get("thumbnail"), int(data["duration"]) if data.get("duration") is not None else None, formats, sources
+    duration = _optional_int(data.get("duration"))
+    view_count = _optional_int(data.get("view_count"))
+    author = _optional_text(data.get("uploader") or data.get("channel") or data.get("creator"))
+    description = _optional_text(data.get("description"))
+    platform = _optional_text(data.get("extractor_key") or data.get("extractor"))
+    # Some Bilibili extractor responses contain the download formats but omit
+    # creator, description and statistics. The public view endpoint carries
+    # those display fields and does not require a user cookie.
+    bilibili = await _bilibili_metadata(url)
+    if bilibili:
+        author = author or bilibili["author"]
+        description = description or bilibili["description"]
+        view_count = view_count if view_count is not None else bilibili["view_count"]
+        platform = "Bilibili"
+    return data.get("title") or "Untitled video", data.get("thumbnail"), duration, author, description, platform, view_count, formats, sources
+
+
+async def _bilibili_metadata(url: str) -> dict[str, str | int | None] | None:
+    host = (urlparse(url).hostname or "").lower()
+    if host != "bilibili.com" and not host.endswith(".bilibili.com"):
+        return None
+    match = re.search(r"\b(BV[0-9A-Za-z]{10})\b", url, flags=re.IGNORECASE)
+    if not match:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(
+                "https://api.bilibili.com/x/web-interface/view",
+                params={"bvid": match.group(1)},
+                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.bilibili.com/"},
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError):
+        return None
+    if payload.get("code") != 0 or not isinstance(payload.get("data"), dict):
+        return None
+    data = payload["data"]
+    owner = data.get("owner") if isinstance(data.get("owner"), dict) else {}
+    stats = data.get("stat") if isinstance(data.get("stat"), dict) else {}
+    return {
+        "author": _optional_text(owner.get("name")),
+        "description": _optional_text(data.get("desc")),
+        "view_count": _optional_int(stats.get("view")),
+    }
+
+
+def _optional_text(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 async def download(url: str, format_id: str, output_dir: Path, title: str, on_progress) -> Path:

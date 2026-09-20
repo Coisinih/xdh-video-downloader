@@ -38,10 +38,18 @@ async def create_inspection(payload: InspectionRequest):
     await store.cleanup()
     source_url = normalize_video_url(str(payload.url))
     validate_source_url(source_url)
-    title, thumbnail, duration, formats, direct_sources = await ytdlp.inspect(source_url)
-    inspection = Inspection(store.token(), source_url, title, thumbnail, duration, formats, direct_sources=direct_sources)
+    title, thumbnail, duration, author, description, platform, view_count, formats, direct_sources = await ytdlp.inspect(source_url)
+    inspection = Inspection(
+        store.token(), source_url, title, thumbnail, duration, formats,
+        author=author, description=description, platform=platform, view_count=view_count,
+        direct_sources=direct_sources,
+    )
     store.inspections[inspection.id] = inspection
-    return InspectionResponse(inspection_id=inspection.id, title=title, thumbnail=thumbnail, duration=duration, formats=formats, expires_at=inspection.created_at + store.ttl)
+    return InspectionResponse(
+        inspection_id=inspection.id, title=title, thumbnail=thumbnail, duration=duration,
+        author=author, description=description, platform=platform, view_count=view_count,
+        formats=formats, expires_at=inspection.created_at + store.ttl,
+    )
 
 
 def get_inspection(inspection_id: str) -> Inspection:

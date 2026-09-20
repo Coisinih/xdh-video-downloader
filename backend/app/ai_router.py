@@ -34,7 +34,15 @@ async def _get_tracks(request: Request, inspection_id: str) -> list[ResolvedTrac
 
 
 def _task_response(task: AiSummaryTask) -> SummaryTaskResponse:
-    return SummaryTaskResponse(id=task.id, status=task.status, progress=task.progress, error=task.error, result=task.result, created_at=task.created_at)
+    return SummaryTaskResponse(
+        id=task.id,
+        status=task.status,
+        progress=task.progress,
+        error=task.error,
+        result=task.result,
+        stream_text=task.stream_text,
+        created_at=task.created_at,
+    )
 
 
 async def _run_summary(task: AiSummaryTask, title: str) -> None:

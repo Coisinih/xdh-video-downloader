@@ -1,5 +1,5 @@
 ﻿export type Format = { id: string; label: string; ext: string; resolution?: string; filesize?: number; codec?: string; direct_available: boolean }
-export type Inspection = { inspection_id: string; title: string; thumbnail?: string; duration?: number; formats: Format[]; expires_at: string }
+export type Inspection = { inspection_id: string; title: string; thumbnail?: string; duration?: number; author?: string; description?: string; platform?: string; view_count?: number; formats: Format[]; expires_at: string }
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> { const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options }); if (!response.ok) { const data = await response.json().catch(() => null); throw new Error(data?.detail || '请求失败，请稍后重试。') }; return response.json() as Promise<T> }
 export const inspect = (url: string) => request<Inspection>('/api/v1/inspections', { method: 'POST', body: JSON.stringify({ url }) })
 export const createDownload = (inspection_id: string, format_id: string) => request<{ mode: string; delivery_url?: string }>('/api/v1/downloads', { method: 'POST', body: JSON.stringify({ inspection_id, format_id, mode: 'direct' }) })
@@ -10,7 +10,7 @@ export type OutlineSection = { title: string; summary: string }
 export type KeyPoint = { title: string; detail: string }
 export type MindMapNode = { title: string; children: MindMapNode[] }
 export type SummaryResult = { overview: string; outline: OutlineSection[]; key_points: KeyPoint[]; keywords: string[]; mindmap: MindMapNode; mermaid: string; mindmap_markdown: string; source_language: string }
-export type SummaryTask = { id: string; status: 'queued' | 'processing' | 'completed' | 'failed'; progress: number; error?: string; result?: SummaryResult; created_at: string }
+export type SummaryTask = { id: string; status: 'queued' | 'processing' | 'completed' | 'failed'; progress: number; error?: string; result?: SummaryResult; stream_text: string; created_at: string }
 export type Citation = { start: number; end: number }
 export type Answer = { answer: string; citations: Citation[]; created_at: string }
 

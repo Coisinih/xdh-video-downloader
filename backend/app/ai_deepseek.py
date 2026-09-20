@@ -183,12 +183,12 @@ class DeepSeekClient:
 SUMMARY_SYSTEM = "你是严谨的视频学习助手。仅根据用户提供的字幕生成中文总结，不得补充字幕中没有的事实。必须只返回 JSON。"
 SUMMARY_PROMPT = """根据下列视频字幕生成 JSON，字段必须为 overview、outline、key_points、keywords、mindmap。outline 的元素含 title、summary；key_points 的元素含 title、detail；mindmap 是含 title、children 的树。所有字段必须有内容。\n\n视频标题：{title}\n字幕语言：{language}\n字幕：\n{transcript}"""
 CHUNK_PROMPT = "请仅根据下列字幕片段返回 JSON：{\"summary\": \"片段核心内容\"}。\n\n{transcript}"
-STREAM_SUMMARY_SYSTEM = "You summarize only the supplied video transcript. Write in Chinese, do not add facts, and return readable Markdown only."
-STREAM_SUMMARY_PROMPT = """Create a concise learning summary in Chinese Markdown. Include headings for overview, outline, key points, and conclusion.
+STREAM_SUMMARY_SYSTEM = "You summarize only the supplied video transcript. Write in Chinese, do not add facts, and return Markdown only."
+STREAM_SUMMARY_PROMPT = """根据视频字幕生成精炼的中文视频大纲。只输出 Markdown，不要解释、前言、结论、要点汇总或代码块。使用二级标题表示章节；每个章节用有序列表列出 1 至 3 条内容，按视频叙述顺序组织。
 
-Title: {title}
-Transcript language: {language}
-Transcript:
+视频标题：{title}
+字幕语言：{language}
+字幕：
 {transcript}"""
 ANSWER_SYSTEM = "你是视频字幕问答助手。只能依据提供的摘要和字幕证据回答；找不到依据时明确说明。必须只返回 JSON。"
 ANSWER_PROMPT = """视频摘要：{overview}\n\n字幕证据：\n{evidence}\n\n问题：{question}\n\n返回 JSON：{{\"answer\":\"...\",\"citations\":[{{\"start\":0,\"end\":0}}]}}。citations 只能使用字幕证据内的时间。"""

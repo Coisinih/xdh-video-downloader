@@ -20,6 +20,10 @@ class Inspection:
     formats: list[FormatInfo]
     created_at: datetime = field(default_factory=now)
     direct_sources: dict[str, tuple[str, dict[str, str]]] = field(default_factory=dict)
+    author: str | None = None
+    description: str | None = None
+    platform: str | None = None
+    view_count: int | None = None
 
 
 @dataclass

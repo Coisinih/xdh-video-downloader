@@ -28,6 +28,10 @@ class InspectionResponse(BaseModel):
     title: str
     thumbnail: str | None = None
     duration: int | None = None
+    author: str | None = None
+    description: str | None = None
+    platform: str | None = None
+    view_count: int | None = None
     formats: list[FormatInfo]
     expires_at: datetime
 

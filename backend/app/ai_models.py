@@ -70,6 +70,9 @@ class SummaryTaskResponse(BaseModel):
     progress: float = Field(ge=0, le=100)
     error: str | None = None
     result: SummaryResult | None = None
+    # The streamed Markdown is the canonical video-outline text. Returning it
+    # also lets the client retain the exact final content after a refresh.
+    stream_text: str = ""
     created_at: datetime
 
 

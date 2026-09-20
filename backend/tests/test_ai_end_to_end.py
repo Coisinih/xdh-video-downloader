@@ -84,6 +84,7 @@ async def test_ai_learning_api_flow_with_mocked_external_services(monkeypatch):
             assert completed.status_code == 200
             assert completed.json()["status"] == "completed"
             assert completed.json()["result"]["mermaid"].startswith("mindmap")
+            assert completed.json()["stream_text"] == "# 实时摘要\n"
 
             asked = await client.post(f"/api/v1/ai/summaries/{summary_id}/questions", json={"question": "核心是什么？"})
             assert asked.status_code == 200
