@@ -4,7 +4,7 @@ import json
 import os
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -13,6 +13,7 @@ from fastapi import HTTPException
 
 from .ai_config import ai_settings
 from .ai_models import SubtitleTrack, TranscriptCue
+from .ai_transcription import transcribe_audio
 from .security import validate_source_url
 
 YTDLP_SOURCE = Path(__file__).resolve().parents[1] / "vendor" / "yt-dlp"
@@ -25,6 +26,9 @@ class ResolvedTrack:
     public: SubtitleTrack
     url: str
     headers: dict[str, str]
+    source: str = "platform"
+    cached_cues: list[TranscriptCue] | None = field(default=None, repr=False)
+    transcription_task: asyncio.Task[list[TranscriptCue]] | None = field(default=None, repr=False)
 
 
 def _environment() -> dict[str, str]:
@@ -59,8 +63,11 @@ def _priority(language: str, automatic: bool) -> tuple[int, int, str]:
 
 
 def _pick_format(formats: list[dict]) -> dict | None:
-    ordered = sorted(formats, key=lambda item: {"vtt": 0, "srt": 1}.get(str(item.get("ext", "")).lower(), 2))
-    return next((item for item in ordered if item.get("url")), None)
+    # XML is Bilibili danmaku, not a timed subtitle document.  Treating it as
+    # a subtitle track previously hid the audio-transcription fallback.
+    supported = {"vtt": 0, "srt": 1, "json": 2, "ttml": 3}
+    ordered = sorted(formats, key=lambda item: supported.get(str(item.get("ext", "")).lower(), 99))
+    return next((item for item in ordered if item.get("url") and str(item.get("ext", "")).lower() in supported), None)
 
 
 async def _bilibili_tracks(source_url: str, payload: dict) -> list[ResolvedTrack]:
@@ -172,6 +179,18 @@ async def discover_tracks(source_url: str) -> list[ResolvedTrack]:
     tracks.extend(bili_tracks)
     if not bili_tracks:
         tracks.extend(await _bilibili_dm_tracks(source_url, payload))
+    if not tracks and ai_settings.ai_enable_audio_transcription:
+        tracks.append(ResolvedTrack(
+            SubtitleTrack(
+                id="audio-transcription:automatic",
+                language="auto",
+                label="AI 音频转录（非平台自带字幕）",
+                automatic=True,
+            ),
+            source_url,
+            {},
+            source="audio-transcription",
+        ))
     return sorted(tracks, key=lambda item: _priority(item.public.language, item.public.automatic))
 
 
@@ -239,6 +258,17 @@ def subtitles_to_txt(cues: list[TranscriptCue]) -> str:
 
 
 async def fetch_transcript(track: ResolvedTrack) -> list[TranscriptCue]:
+    if track.source == "audio-transcription":
+        if track.cached_cues is not None:
+            return track.cached_cues
+        if track.transcription_task is None:
+            track.transcription_task = asyncio.create_task(transcribe_audio(track.url))
+        try:
+            track.cached_cues = await asyncio.shield(track.transcription_task)
+        except Exception:
+            track.transcription_task = None
+            raise
+        return track.cached_cues
     validate_source_url(track.url)
     async with httpx.AsyncClient(follow_redirects=True, timeout=ai_settings.ai_subtitle_timeout_seconds) as client:
         response = await client.get(track.url, headers=track.headers)

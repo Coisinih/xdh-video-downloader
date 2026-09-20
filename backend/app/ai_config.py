@@ -15,6 +15,10 @@ class AiSettings(BaseSettings):
     ai_ttl_seconds: int = 7200
     ai_subtitle_timeout_seconds: int = 60
     ai_max_subtitle_bytes: int = 4 * 1024 * 1024
+    ai_enable_audio_transcription: bool = True
+    ai_asr_model: str = "base"
+    ai_asr_timeout_seconds: int = 1_800
+    ai_max_audio_bytes: int = 256 * 1024 * 1024
     ai_max_transcript_chars: int = 160_000
     ai_chunk_chars: int = 24_000
     ai_max_concurrent_tasks: int = 1

@@ -31,6 +31,8 @@ let markmap: { destroy?: () => void; fit?: () => void } | null = null
 let fullscreenMarkmap: { destroy?: () => void; fit?: () => void } | null = null
 
 const hasTracks = computed(() => tracks.value.length > 0)
+const selectedTrack = computed(() => tracks.value.find(track => track.id === selectedTrackId.value))
+const usesAudioTranscription = computed(() => selectedTrack.value?.id === 'audio-transcription:automatic')
 const isComplete = computed(() => summary.value?.status === 'completed' && Boolean(summary.value.result))
 // This value is intentionally never constructed from result.outline: the
 // stream is the one canonical version of the video outline.
@@ -266,7 +268,7 @@ onBeforeUnmount(() => { markmap?.destroy?.(); fullscreenMarkmap?.destroy?.(); wi
       <div>
         <p class="ai-eyebrow"><Sparkles :size="15" aria-hidden="true" />AI 视频学习助手</p>
         <h2>快速读懂视频核心内容</h2>
-        <p>自动使用视频自带的首选字幕生成大纲；可查看字幕、思维导图并继续提问。</p>
+        <p>优先使用视频自带字幕；平台未提供字幕时，会使用 AI 音频转录生成大纲。</p>
       </div>
       <button class="ai-primary" type="button" :disabled="loadingTracks || !hasTracks || generating" @click="generate()">
         <LoaderCircle v-if="generating" class="spin" :size="15" aria-hidden="true" />
@@ -281,7 +283,7 @@ onBeforeUnmount(() => { markmap?.destroy?.(); fullscreenMarkmap?.destroy?.(); wi
     </div>
 
     <div class="ai-panel" :aria-busy="loadingTracks || generating">
-      <div v-if="loadingTracks" class="ai-loading" role="status"><LoaderCircle class="spin" :size="22" aria-hidden="true" /><strong>正在识别视频自带字幕</strong><span>识别完成后会自动开始生成视频大纲。</span></div>
+      <div v-if="loadingTracks" class="ai-loading" role="status"><LoaderCircle class="spin" :size="22" aria-hidden="true" /><strong>{{ usesAudioTranscription ? '正在生成 AI 音频转录' : '正在识别视频自带字幕' }}</strong><span>{{ usesAudioTranscription ? '首次使用会下载转录模型，较长视频需要几分钟，请保持页面打开。' : '识别完成后会自动开始生成视频大纲。' }}</span></div>
       <div v-else-if="!hasTracks" class="ai-placeholder"><BrainCircuit :size="26" aria-hidden="true" /><p>该视频没有可用的自带字幕，仍可继续下载视频。</p></div>
 
       <template v-else-if="activeTab === 'summary'">
@@ -294,7 +296,7 @@ onBeforeUnmount(() => { markmap?.destroy?.(); fullscreenMarkmap?.destroy?.(); wi
       <template v-else-if="activeTab === 'transcript'">
         <p v-if="transcriptError" class="ai-error" role="alert">{{ transcriptError }}</p>
         <template v-else-if="cues.length">
-          <div class="panel-actions"><p>已加载 {{ cues.length }} 条视频自带字幕。</p><div><button class="ai-secondary" type="button" @click="downloadSubtitle('srt')"><Download :size="15" aria-hidden="true" />下载 SRT</button><button class="ai-secondary" type="button" @click="downloadSubtitle('txt')"><Download :size="15" aria-hidden="true" />下载 TXT</button></div></div>
+          <div class="panel-actions"><p>已加载 {{ cues.length }} 条{{ usesAudioTranscription ? ' AI 音频转录' : '视频自带字幕' }}。</p><div><button class="ai-secondary" type="button" @click="downloadSubtitle('srt')"><Download :size="15" aria-hidden="true" />下载 SRT</button><button class="ai-secondary" type="button" @click="downloadSubtitle('txt')"><Download :size="15" aria-hidden="true" />下载 TXT</button></div></div>
           <div class="transcript-list"><div v-for="cue in cues" :key="`${cue.start}-${cue.end}-${cue.text}`" class="cue"><time>{{ timestamp(cue.start) }}</time><span>{{ cue.text }}</span></div></div>
         </template>
         <div v-else class="ai-placeholder"><BotMessageSquare :size="26" aria-hidden="true" /><p>暂无可展示字幕。</p></div>

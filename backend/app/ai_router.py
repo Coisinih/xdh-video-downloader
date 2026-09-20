@@ -103,7 +103,7 @@ async def download_subtitle(request: Request, inspection_id: str, subtitle_id: s
         content=content.encode("utf-8"),
         media_type=media_type,
         headers={
-            "Content-Disposition": f"attachment; filename=\"subtitles.srt\"; filename*=UTF-8''{encoded_filename}",
+            "Content-Disposition": f"attachment; filename=\"subtitles.{extension}\"; filename*=UTF-8''{encoded_filename}",
             "Cache-Control": "private, no-store",
         },
     )
