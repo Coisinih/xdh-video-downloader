@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ArrowDownToLine, CheckCircle2, Clipboard, Download, Eye, FileVideo, Globe2, Link, LoaderCircle, ShieldCheck, Sparkles, UserRound } from 'lucide-vue-next'
+import { ArrowDownToLine, CheckCircle2, Clipboard, Download, Eye, FileVideo, Globe2, Link, LoaderCircle, ShieldCheck, UserRound } from 'lucide-vue-next'
 import { createDownload, inspect, type Format, type Inspection } from './api'
 import AiLearningWorkspace from './components/AiLearningWorkspace.vue'
+import SeoContent from './components/SeoContent.vue'
 
 const url = ref('')
 const inspection = ref<Inspection | null>(null)
@@ -68,17 +69,18 @@ async function startDownload() {
 </script>
 
 <template>
-  <main :class="{ 'has-result': inspection }">
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <main id="main-content" :class="{ 'has-result': inspection }">
     <header class="site-header">
-      <a class="brand" href="#" aria-label="VidNest 首页"><span class="brand-mark"><ArrowDownToLine :size="22" /></span><strong>VidNest</strong><span class="brand-tag">万能视频下载</span></a>
-      <nav aria-label="主导航"><a href="#features">功能特性</a><a href="#pricing">套餐价格</a><a href="#platforms">支持平台</a></nav>
-      <button class="vip-button" type="button"><Sparkles :size="18" />开通 VIP</button>
+      <a class="brand" href="#main-content" aria-label="VidNest 首页"><span class="brand-mark"><ArrowDownToLine :size="22" aria-hidden="true" /></span><strong>VidNest</strong><span class="brand-tag">视频下载总结器</span></a>
+      <nav aria-label="主导航"><a href="#features">核心功能</a><a href="#how-it-works">使用方法</a><a href="#platforms">支持平台</a><a href="#faq">常见问题</a></nav>
+      <a class="header-action" href="#about">关于 VidNest</a>
     </header>
 
-    <section class="hero" aria-label="视频下载">
-      <p class="trust"><i></i> 支持多个平台，免费使用</p>
-      <h1>万能视频下载器，<em>一键保存</em></h1>
-      <p class="lead">粘贴视频链接，智能解析，支持多种清晰度下载。已验证支持 B 站、AcFun 和虎牙公开视频。</p>
+    <section class="hero" aria-label="视频下载与总结">
+      <p class="trust"><i></i> 面向公开、无 DRM、无需登录的视频内容</p>
+      <h1>万能视频下载与 <em>AI 视频总结</em></h1>
+      <p class="lead">VidNest 可解析公开视频链接、选择清晰度并下载；视频带有可用字幕时，还能生成视频大纲、字幕文本、思维导图和基于字幕证据的 AI 问答。</p>
       <section class="workbench" aria-label="视频下载器">
         <label class="sr-only" for="source-url">公开视频链接</label>
         <div class="url-row">
@@ -96,7 +98,7 @@ async function startDownload() {
       <section class="result video-info" aria-label="视频信息与下载">
         <div class="video-head">
           <div class="video-media">
-            <img v-if="inspection.thumbnail && !thumbnailFailed" :src="`/api/v1/thumbnails/${inspection.inspection_id}`" alt="视频封面" @error="thumbnailFailed = true" />
+            <img v-if="inspection.thumbnail && !thumbnailFailed" :src="`/api/v1/thumbnails/${inspection.inspection_id}`" :alt="`${inspection.title} 视频封面`" width="640" height="360" @error="thumbnailFailed = true" />
             <div v-else class="thumbnail"><FileVideo :size="30" /></div>
             <span class="video-duration">{{ duration }}</span>
           </div>
@@ -131,6 +133,8 @@ async function startDownload() {
       <AiLearningWorkspace :inspection="inspection" />
     </section>
 
-    <footer><span>VidNest MVP</span><span>浏览器直接下载 · 无需账号</span></footer>
+    <SeoContent />
+
+    <footer><span>© 2026 VidNest · 开发者：咸蛋黄</span><a href="mailto:senwei0521@gmail.com">senwei0521@gmail.com</a><span>公开视频下载 · 字幕提取 · AI 视频总结</span></footer>
   </main>
 </template>

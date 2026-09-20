@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b && vite-ssg build",
     "test": "vitest run"
   },
   "dependencies": {
@@ -19,8 +19,11 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@unhead/vue": "^3.4.1",
+    "beasties": "^0.3.5",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",
+    "vite-ssg": "^28.3.0",
     "vitest": "^2.1.8",
     "vue-tsc": "^2.2.0"
   }

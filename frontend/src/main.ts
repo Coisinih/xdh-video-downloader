@@ -1,7 +1,11 @@
-import { createApp } from 'vue'
+import { ViteSSG } from 'vite-ssg/single-page'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import './style.css'
 import './workspace.css'
 import './result-reference.css'
-createApp(App).use(createPinia()).mount('#app')
+import './seo-content.css'
+
+export const createApp = ViteSSG(App, ({ app }) => {
+  app.use(createPinia())
+})

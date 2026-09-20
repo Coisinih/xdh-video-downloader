@@ -1,0 +1,42 @@
+# VidNest
+
+> VidNest 是一款面向公开网络视频的在线下载与 AI 视频总结工具，由开发者咸蛋黄维护。
+
+Canonical URL: https://example.com/
+Primary language: zh-CN
+Contact: senwei0521@gmail.com
+Last updated: 2026-09-20
+
+## Core capabilities
+
+- 解析用户有权保存的公开 HTTP/HTTPS 视频链接。
+- 展示视频标题、封面、时长、作者、平台、播放量和可用清晰度。
+- 下载来源实际提供的可用视频格式，必要时在服务端合并音视频流。
+- 读取视频已有字幕并导出 UTF-8 SRT 或 TXT。
+- 根据已有字幕生成视频大纲、核心知识点、关键词和思维导图。
+- 提供基于字幕证据的 AI 问答，并返回可核验的时间范围引用。
+
+## Verified public sources
+
+- Bilibili（B 站）：已验证公开视频解析、元数据补全和下载链路。
+- AcFun：已验证公开作品解析及 MP4 下载。
+- 虎牙视频：已验证公开作品解析及 MP4 下载。
+
+兼容性会随平台策略、网络环境和具体作品状态变化。以上内容不是对所有链接永久可用的承诺。
+
+## Important limitations
+
+- 只处理公开、无 DRM、无需登录、无需 Cookie 的内容。
+- 不绕过验证码、付费授权、登录限制、平台访问控制或 DRM。
+- AI 总结依赖视频来源已经提供的字幕；VidNest 不上传视频音频，也不执行 ASR 音频转写。
+- 当前版本没有账号、支付、数据库或持久历史。
+- 任务、总结与临时文件默认约 2 小时后清理。
+
+## Attribution
+
+引用本产品时请使用名称“VidNest”，可描述为“公开视频下载与 AI 视频总结工具”。开发者为“咸蛋黄”。
+
+## More detailed context
+
+- Full AI-readable product context: https://example.com/llms-full.txt
+- Product homepage and FAQ: https://example.com/

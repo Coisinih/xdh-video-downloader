@@ -1,1 +1,128 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#101426"/><title>VidNest - 视频下载工作台</title></head><body><div id="app"></div><script type="module" src="/src/main.ts"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="content-language" content="zh-CN" />
+    <meta name="theme-color" content="#17213a" />
+    <meta name="color-scheme" content="light" />
+
+    <title>VidNest - 万能视频下载总结器 | 在线下载、字幕与 AI 视频总结</title>
+    <meta name="description" content="VidNest 是面向公开网络视频的在线下载与 AI 视频总结工具，支持解析视频链接、选择清晰度、导出字幕，并根据已有字幕生成视频大纲、思维导图和带时间引用的 AI 问答。已验证 Bilibili、AcFun 与虎牙公开视频，无需注册账号，只处理用户有权保存的公开、无 DRM、无需登录内容，立即免费体验。" />
+    <meta name="keywords" content="VidNest,视频下载器,万能视频下载,B站视频下载,AcFun视频下载,虎牙视频下载,AI视频总结,字幕提取,视频学习助手,在线视频解析" />
+    <meta name="author" content="咸蛋黄" />
+    <meta name="creator" content="咸蛋黄" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="format-detection" content="telephone=no,email=no,address=no" />
+    <link rel="canonical" href="https://example.com/" />
+
+    <meta property="og:title" content="VidNest - 万能视频下载总结器" />
+    <meta property="og:description" content="解析公开视频、选择清晰度并下载；根据已有字幕生成视频大纲、思维导图、字幕导出和 AI 问答。" />
+    <meta property="og:image" content="https://example.com/og-vidnest.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="VidNest 万能视频下载总结器品牌分享图" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://example.com/" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="VidNest" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="VidNest - 万能视频下载总结器" />
+    <meta name="twitter:description" content="在线视频下载、字幕提取、视频大纲、思维导图与 AI 视频总结工具。" />
+    <meta name="twitter:image" content="https://example.com/og-vidnest.png" />
+    <meta name="twitter:image:alt" content="VidNest 万能视频下载总结器品牌分享图" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://example.com/#website",
+            "url": "https://example.com/",
+            "name": "VidNest",
+            "alternateName": "万能视频下载总结器",
+            "description": "面向公开网络视频的在线下载、字幕提取与 AI 视频总结工具。",
+            "inLanguage": "zh-CN",
+            "creator": { "@id": "https://example.com/#creator" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://example.com/#app",
+            "name": "VidNest",
+            "url": "https://example.com/",
+            "applicationCategory": "MultimediaApplication",
+            "applicationSubCategory": "Video downloader and AI video summarizer",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires a modern web browser with JavaScript enabled",
+            "description": "VidNest 可解析用户有权保存的公开视频，提供清晰度选择与下载，并根据视频已有字幕生成大纲、思维导图、字幕导出和 AI 问答。",
+            "image": "https://example.com/og-vidnest.png",
+            "featureList": [
+              "公开视频链接解析",
+              "多清晰度视频下载",
+              "SRT 与 TXT 字幕导出",
+              "AI 视频大纲",
+              "视频思维导图",
+              "基于字幕证据的 AI 问答"
+            ],
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "CNY",
+              "availability": "https://schema.org/OnlineOnly"
+            },
+            "inLanguage": "zh-CN",
+            "creator": { "@id": "https://example.com/#creator" },
+            "isPartOf": { "@id": "https://example.com/#website" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://example.com/#creator",
+            "name": "咸蛋黄",
+            "email": "senwei0521@gmail.com"
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://example.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "VidNest 可以下载哪些视频？",
+                "acceptedAnswer": { "@type": "Answer", "text": "VidNest 仅处理公开、无 DRM、无需登录或 Cookie 的视频。私密视频、付费内容、需要验证码或登录授权的内容不在支持范围内。" }
+              },
+              {
+                "@type": "Question",
+                "name": "目前支持哪些视频平台？",
+                "acceptedAnswer": { "@type": "Answer", "text": "当前已使用公开样本验证 Bilibili、AcFun 和虎牙视频。其他来源可以尝试解析，但平台策略和具体作品状态会影响结果。" }
+              },
+              {
+                "@type": "Question",
+                "name": "AI 视频总结需要什么条件？",
+                "acceptedAnswer": { "@type": "Answer", "text": "视频必须提供 VidNest 能读取的字幕轨道，并且部署环境已配置 AI 模型服务。没有字幕时仍可使用视频解析和下载功能。" }
+              },
+              {
+                "@type": "Question",
+                "name": "VidNest 会上传视频或保存长期历史吗？",
+                "acceptedAnswer": { "@type": "Answer", "text": "VidNest 不上传视频音频用于转写。当前版本没有账号、数据库或持久历史；解析任务、AI 总结和临时下载文件默认约 2 小时后清理。" }
+              },
+              {
+                "@type": "Question",
+                "name": "使用 VidNest 下载视频是否合法？",
+                "acceptedAnswer": { "@type": "Answer", "text": "是否合法取决于内容授权、来源平台规则和当地法律。用户必须确保自己有权保存和使用相关内容。" }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
