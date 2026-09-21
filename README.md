@@ -92,13 +92,12 @@ VidNest 是一个前后端分离的 Web 应用，面向**希望把自己有权�
 - 首页使用 SSG 预渲染，并提供 `robots.txt`、`sitemap.xml`、`llms.txt`、JSON-LD 与 Open Graph 元数据。
 
 ## 界面预览
-
-![image-20260921133940786](C:\Users\25872\AppData\Roaming\Typora\typora-user-images\image-20260921133940786.png)
-
-![image-20260921134114130](C:\Users\25872\AppData\Roaming\Typora\typora-user-images\image-20260921134114130.png)
-
-- 项目主页 / 演示地址：[待补充：在线 Demo 链接；若为纯自托管项目，请写明「本项目无公共实例」]
-- 演示视频或 GIF：[待补充：链接或文件路径]
+<img width="2560" height="1229" alt="image" src="https://github.com/user-attachments/assets/e7d71909-31c1-4d86-a5b5-15e57f210026" />
+<img width="2560" height="1229" alt="image" src="https://github.com/user-attachments/assets/f4de29da-39fa-4ae5-a865-045799cde2cd" />
+<img width="2560" height="1229" alt="image" src="https://github.com/user-attachments/assets/e838b214-905f-411d-a812-06dcc538a5f4" />
+<img width="2560" height="1229" alt="image" src="https://github.com/user-attachments/assets/62c508a2-8aa2-4a0b-9cdd-46a810891f85" />
+<img width="2560" height="1229" alt="image" src="https://github.com/user-attachments/assets/87540b9c-7795-40b1-b39e-a9d7a5877804" />
+<img width="1800" height="830" alt="image" src="https://github.com/user-attachments/assets/5462efea-4c39-42b3-8e61-878f4a00be56" />
 
 ## 平台支持与合规边界
 
