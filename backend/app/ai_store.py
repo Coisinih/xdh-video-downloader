@@ -22,6 +22,7 @@ class AiSummaryTask:
     stream_done: bool = False
     questions: list[tuple[str, AnswerResponse]] = field(default_factory=list)
     created_at: object = field(default_factory=now)
+    user_id: str | None = None
 
 
 class AiMemoryStore:

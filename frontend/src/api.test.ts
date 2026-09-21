@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSummary, downloadSubtitle, getSubtitleTracks, inspect } from './api'
+import { createDownload, createSummary, downloadSubtitle, getDownload, getSubtitleTracks, inspect } from './api'
 
 describe('inspection API', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -23,6 +23,15 @@ describe('inspection API', () => {
     vi.stubGlobal('fetch', fetchMock)
     await createSummary('i1', 'manual:zh-CN')
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/ai/summaries', expect.objectContaining({ method: 'POST', body: JSON.stringify({ inspection_id: 'i1', subtitle_id: 'manual:zh-CN' }) }))
+  })
+
+  it('polls a server-side merged download when direct media lacks audio', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ id: 'd1', status: 'completed', progress: 100, delivery_url: '/api/v1/deliveries/token' }), { status: 200 })))
+    vi.stubGlobal('fetch', fetchMock)
+    await createDownload('i1', '137')
+    await getDownload('d 1')
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/downloads', expect.objectContaining({ method: 'POST', body: JSON.stringify({ inspection_id: 'i1', format_id: '137', mode: 'direct' }) }))
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/downloads/d%201', expect.anything())
   })
 
   it('downloads an SRT subtitle blob for a subtitle track', async () => {

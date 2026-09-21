@@ -63,3 +63,22 @@ class TaskResponse(BaseModel):
     error: str | None = None
     delivery_url: str | None = None
     filename: str | None = None
+
+
+class BatchDownloadRequest(BaseModel):
+    urls: list[HttpUrl] = Field(min_length=1, max_length=10)
+
+
+class BatchItemResponse(BaseModel):
+    url: str
+    title: str | None = None
+    status: str
+    progress: float = 0
+    error: str | None = None
+    delivery_url: str | None = None
+
+
+class BatchDownloadResponse(BaseModel):
+    id: str
+    status: str
+    items: list[BatchItemResponse]

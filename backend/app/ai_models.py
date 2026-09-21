@@ -91,4 +91,14 @@ class AnswerResponse(BaseModel):
     created_at: datetime
 
 
+class TranslationRequest(BaseModel):
+    target_language: str = Field(pattern="^(zh-CN|zh-TW|en|ja|ko|es|fr|de)$")
+
+
+class TranslationResponse(BaseModel):
+    source_language: str
+    target_language: str
+    cues: list[TranscriptCue]
+
+
 MindMapNode.model_rebuild()

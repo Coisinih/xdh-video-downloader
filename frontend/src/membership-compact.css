@@ -1,0 +1,19 @@
+/* Compact pricing presentation: preserve 48px actions while reducing visual bulk. */
+.membership-section { padding-top: 52px; padding-bottom: 52px; }
+.membership-heading h2 { font-size: clamp(28px, 3.5vw, 42px); }
+.membership-heading span { margin-top: 8px; font-size: 16px; }
+.pricing-grid { gap: 18px; margin-top: 28px; }
+.pricing-card { min-height: 424px; padding: 26px; border-radius: 18px; }
+.pricing-card h3 { font-size: 21px; }
+.pricing-card > p { margin: 6px 0 16px; }
+.price { font-size: 36px; }
+.pricing-card ul { gap: 10px; margin: 18px 0 24px; }
+.recommended { top: 14px; right: 14px; padding: 6px 10px; font-size: 12px; }
+.renew-option { margin-top: 14px; padding: 10px; }
+.vip-tools { margin-top: 24px; padding: 24px; }
+
+@media (max-width: 760px) {
+  .membership-section { padding: 40px 16px; }
+  .pricing-card { min-height: 0; padding: 22px; }
+  .vip-tools { padding: 18px; }
+}

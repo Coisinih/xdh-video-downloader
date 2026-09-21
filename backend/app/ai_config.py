@@ -9,6 +9,7 @@ class AiSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",
         env_prefix="VIDNEST_",
+        extra="ignore",
     )
 
     ai_work_dir: Path = Path("/tmp/vidnest-ai")

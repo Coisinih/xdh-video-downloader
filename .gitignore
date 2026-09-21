@@ -6,3 +6,5 @@ dist/
 downloads/
 .env
 .cursor/
+backend/.asr-test-models/
+bili-browser-verify/

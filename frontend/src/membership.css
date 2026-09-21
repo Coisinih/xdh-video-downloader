@@ -1,0 +1,22 @@
+.account-actions { justify-self: end; display: flex; align-items: center; gap: 8px; }
+.account-actions .header-action { border: 0; cursor: pointer; gap: 6px; }
+.vip-status { min-height: 40px; display: inline-flex; align-items: center; gap: 5px; padding: 0 12px; border-radius: 999px; background: #fff7cc; color: #8a6500; font-weight: 800; text-decoration: none; }
+.account-menu { position: relative; }
+.avatar-button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #3478f6; color: #fff; font-size: 17px; font-weight: 800; display: grid; place-items: center; }
+.avatar-button:hover { background: #2468e7; }
+.account-dropdown { position: absolute; top: 100%; right: 0; padding-top: 8px; }
+.account-card { display: none; min-width: 210px; padding: 12px; border: 1px solid #e3e7ef; border-radius: 12px; background: #fff; box-shadow: 0 12px 32px #263f6824; text-align: left; }
+.account-menu:hover .account-card, .account-menu:focus-within .account-card { display: block; }
+.account-email { margin: 0 0 10px; color: #667085; font-size: 13px; overflow-wrap: anywhere; }
+.account-card .header-action { width: 100%; justify-content: center; }
+.quota-note { margin: 10px 0 0; color: #64748b; font-size: 14px; }
+.ai-vip-lock { display: flex; min-height: 360px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border: 1px solid #dce6f7; border-radius: 12px; background: linear-gradient(145deg,#fff,#f3f7ff); text-align: center; color: #64748b; }
+.ai-vip-lock > svg { color: #e5a900; }
+.ai-vip-lock h2 { margin: 16px 0 7px; color: #17213a; font-size: 22px; }
+.ai-vip-lock p { max-width: 440px; margin: 0 0 18px; line-height: 1.65; }
+.ai-vip-lock a { padding: 11px 19px; border-radius: 8px; background: #3478f6; color: #fff; font-weight: 800; text-decoration: none; }
+@media (max-width:850px) {
+  .account-actions .vip-status { display: none; }
+  .account-actions .header-action { min-height: 40px; padding: 0 12px; }
+  .ai-vip-lock { margin: 0 15px; }
+}

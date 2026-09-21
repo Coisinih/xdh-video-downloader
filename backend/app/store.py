@@ -50,12 +50,30 @@ class Task:
     created_at: datetime = field(default_factory=now)
 
 
+@dataclass
+class BatchItem:
+    url: str
+    title: str | None = None
+    status: str = "queued"
+    task_id: str | None = None
+    error: str | None = None
+
+
+@dataclass
+class BatchTask:
+    id: str
+    user_id: str
+    items: list[BatchItem]
+    created_at: datetime = field(default_factory=now)
+
+
 class MemoryStore:
     def __init__(self, ttl_seconds: int):
         self.ttl = timedelta(seconds=ttl_seconds)
         self.inspections: dict[str, Inspection] = {}
         self.deliveries: dict[str, Delivery] = {}
         self.tasks: dict[str, Task] = {}
+        self.batch_tasks: dict[str, BatchTask] = {}
         self.lock = asyncio.Lock()
 
     @staticmethod
@@ -67,6 +85,7 @@ class MemoryStore:
         async with self.lock:
             self.inspections = {key: value for key, value in self.inspections.items() if value.created_at > cutoff}
             self.tasks = {key: value for key, value in self.tasks.items() if value.created_at > cutoff}
+            self.batch_tasks = {key: value for key, value in self.batch_tasks.items() if value.created_at > cutoff}
             expired = [key for key, value in self.deliveries.items() if value.created_at <= cutoff]
             for key in expired:
                 delivery = self.deliveries.pop(key)

@@ -2,21 +2,27 @@ import asyncio
 import json
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
 
 from .ai_config import ai_settings
-from .ai_deepseek import answer_question, generate_summary, stream_summary_markdown
-from .ai_models import AnswerResponse, QuestionRequest, SubtitleTracksResponse, SummaryRequest, SummaryTaskResponse, TaskStatus, TranscriptResponse
+from .ai_deepseek import answer_question, generate_summary, stream_summary_markdown, translate_cues
+from .ai_models import AnswerResponse, QuestionRequest, SubtitleTracksResponse, SummaryRequest, SummaryTaskResponse, TaskStatus, TranscriptResponse, TranslationRequest, TranslationResponse
 from .ai_store import AiMemoryStore, AiSummaryTask
 from .ai_subtitles import ResolvedTrack, discover_tracks, fetch_transcript, subtitles_to_srt, subtitles_to_txt
 from .security import safe_filename
 from .store import now
+from .auth import CurrentUser, require_csrf, require_user
+from .entitlements import require_vip
 
 router = APIRouter(prefix="/api/v1/ai", tags=["ai-learning"])
 ai_store = AiMemoryStore(ai_settings.ai_ttl_seconds)
 ai_semaphore = asyncio.Semaphore(ai_settings.ai_max_concurrent_tasks)
 _tracks: dict[str, list[ResolvedTrack]] = {}
+
+
+def _vip(request: Request, user: CurrentUser) -> None:
+    require_vip(request.app.state.database, user.id)
 
 
 def _inspection(request: Request, inspection_id: str):
@@ -67,14 +73,16 @@ async def _run_summary(task: AiSummaryTask, title: str) -> None:
 
 
 @router.get("/inspections/{inspection_id}/subtitle-tracks", response_model=SubtitleTracksResponse)
-async def subtitle_tracks(request: Request, inspection_id: str):
+async def subtitle_tracks(request: Request, inspection_id: str, user: CurrentUser = Depends(require_user)):
+    _vip(request, user)
     await ai_store.cleanup()
     tracks = await _get_tracks(request, inspection_id)
     return SubtitleTracksResponse(tracks=[item.public for item in tracks])
 
 
 @router.get("/inspections/{inspection_id}/subtitle-tracks/{subtitle_id}", response_model=TranscriptResponse)
-async def transcript(request: Request, inspection_id: str, subtitle_id: str):
+async def transcript(request: Request, inspection_id: str, subtitle_id: str, user: CurrentUser = Depends(require_user)):
+    _vip(request, user)
     tracks = await _get_tracks(request, inspection_id)
     track = next((item for item in tracks if item.public.id == subtitle_id), None)
     if not track:
@@ -83,7 +91,8 @@ async def transcript(request: Request, inspection_id: str, subtitle_id: str):
 
 
 @router.get("/inspections/{inspection_id}/subtitle-tracks/{subtitle_id}/download")
-async def download_subtitle(request: Request, inspection_id: str, subtitle_id: str, format: str = Query(default="srt", pattern="^(srt|txt)$")):
+async def download_subtitle(request: Request, inspection_id: str, subtitle_id: str, format: str = Query(default="srt", pattern="^(srt|txt)$"), user: CurrentUser = Depends(require_user)):
+    _vip(request, user)
     inspection = _inspection(request, inspection_id)
     tracks = await _get_tracks(request, inspection_id)
     track = next((item for item in tracks if item.public.id == subtitle_id), None)
@@ -110,7 +119,8 @@ async def download_subtitle(request: Request, inspection_id: str, subtitle_id: s
 
 
 @router.post("/summaries", response_model=SummaryTaskResponse)
-async def create_summary(request: Request, payload: SummaryRequest):
+async def create_summary(request: Request, payload: SummaryRequest, user: CurrentUser = Depends(require_csrf)):
+    _vip(request, user)
     await ai_store.cleanup()
     inspection = _inspection(request, payload.inspection_id)
     tracks = await _get_tracks(request, payload.inspection_id)
@@ -118,25 +128,31 @@ async def create_summary(request: Request, payload: SummaryRequest):
     if not track:
         raise HTTPException(404, "字幕轨道不存在")
     cues = await fetch_transcript(track)
-    task = AiSummaryTask(ai_store.token(), inspection.id, track.public.id, track.public.language, cues=cues)
+    task = AiSummaryTask(ai_store.token(), inspection.id, track.public.id, track.public.language, cues=cues, user_id=user.id)
     ai_store.tasks[task.id] = task
     asyncio.create_task(_run_summary(task, inspection.title))
     return _task_response(task)
 
 
 @router.get("/summaries/{summary_id}", response_model=SummaryTaskResponse)
-async def get_summary(summary_id: str):
+async def get_summary(summary_id: str, request: Request, user: CurrentUser = Depends(require_user)):
+    _vip(request, user)
     await ai_store.cleanup()
     task = ai_store.tasks.get(summary_id)
     if not task:
+        raise HTTPException(404, "AI 总结任务不存在或已过期")
+    if task.user_id != user.id:
         raise HTTPException(404, "AI 总结任务不存在或已过期")
     return _task_response(task)
 
 
 @router.get("/summaries/{summary_id}/stream")
-async def stream_summary(summary_id: str):
+async def stream_summary(summary_id: str, request: Request, user: CurrentUser = Depends(require_user)):
+    _vip(request, user)
     task = ai_store.tasks.get(summary_id)
     if not task:
+        raise HTTPException(404, "AI summary task does not exist or has expired")
+    if task.user_id != user.id:
         raise HTTPException(404, "AI summary task does not exist or has expired")
 
     async def events():
@@ -162,10 +178,13 @@ async def stream_summary(summary_id: str):
 
 
 @router.post("/summaries/{summary_id}/questions", response_model=AnswerResponse)
-async def ask_question(summary_id: str, payload: QuestionRequest):
+async def ask_question(summary_id: str, payload: QuestionRequest, request: Request, user: CurrentUser = Depends(require_csrf)):
+    _vip(request, user)
     await ai_store.cleanup()
     task = ai_store.tasks.get(summary_id)
     if not task:
+        raise HTTPException(404, "AI 总结任务不存在或已过期")
+    if task.user_id != user.id:
         raise HTTPException(404, "AI 总结任务不存在或已过期")
     if task.status != TaskStatus.completed or not task.result:
         raise HTTPException(409, "请在 AI 总结完成后再提问")
@@ -175,8 +194,29 @@ async def ask_question(summary_id: str, payload: QuestionRequest):
 
 
 @router.delete("/summaries/{summary_id}/questions", status_code=204)
-async def clear_questions(summary_id: str):
+async def clear_questions(summary_id: str, request: Request, user: CurrentUser = Depends(require_csrf)):
+    _vip(request, user)
     task = ai_store.tasks.get(summary_id)
     if not task:
         raise HTTPException(404, "AI 总结任务不存在或已过期")
+    if task.user_id != user.id:
+        raise HTTPException(404, "AI 总结任务不存在或已过期")
     task.questions.clear()
+
+
+@router.post("/inspections/{inspection_id}/subtitle-tracks/{subtitle_id}/translations", response_model=TranslationResponse)
+async def translate_subtitle(
+    request: Request,
+    inspection_id: str,
+    subtitle_id: str,
+    payload: TranslationRequest,
+    user: CurrentUser = Depends(require_csrf),
+):
+    _vip(request, user)
+    tracks = await _get_tracks(request, inspection_id)
+    track = next((item for item in tracks if item.public.id == subtitle_id), None)
+    if not track:
+        raise HTTPException(404, "字幕轨道不存在")
+    cues = await fetch_transcript(track)
+    translated = await translate_cues(cues, payload.target_language)
+    return TranslationResponse(source_language=track.public.language, target_language=payload.target_language, cues=translated)

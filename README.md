@@ -8,7 +8,7 @@ VidNest 是一个用于保存**公开、无 DRM、无需登录**视频的自托�
 docker compose up --build
 ```
 
-访问 `http://localhost:8080`。可通过环境变量配置：`VIDNEST_PORT`、`VIDNEST_ALLOWED_HOSTS`（逗号分隔域名白名单）、`VIDNEST_MAX_FILE_SIZE_MB`、`VIDNEST_MAX_CONCURRENT_DOWNLOADS`。
+访问 `http://localhost:8080`。可通过环境变量配置：`VIDNEST_PORT`、`VIDNEST_ALLOWED_HOSTS`（逗号分隔域名白名单）、`VIDNEST_MAX_FILE_SIZE_MB`、`VIDNEST_MAX_CONCURRENT_DOWNLOADS`。会员支付需要配置 Stripe Test Mode 的 `VIDNEST_STRIPE_SECRET_KEY`、`VIDNEST_STRIPE_WEBHOOK_SECRET`、`VIDNEST_STRIPE_ONE_TIME_PRICE_ID` 和 `VIDNEST_STRIPE_SUBSCRIPTION_PRICE_ID`，完整步骤见 [docs/billing-stripe.md](docs/billing-stripe.md)。
 
 ## 本地开发
 

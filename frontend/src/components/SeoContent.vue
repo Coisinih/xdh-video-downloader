@@ -45,7 +45,7 @@ import {
         <article class="feature-card">
           <span class="feature-icon"><BrainCircuit :size="23" aria-hidden="true" /></span>
           <h3>AI 视频总结</h3>
-          <p>根据字幕生成视频大纲、核心知识点和关键词，不上传视频音频，也不执行音频转写。</p>
+          <p>VIP 可根据字幕或本地音频转录生成视频大纲、核心知识点和关键词，并使用 DeepSeek 翻译字幕。</p>
         </article>
         <article class="feature-card">
           <span class="feature-icon"><GitBranch :size="23" aria-hidden="true" /></span>
@@ -97,10 +97,10 @@ import {
       </header>
       <dl class="facts-list">
         <div><dt>产品类型</dt><dd>浏览器端公开视频下载与 AI 视频学习工具</dd></div>
-        <div><dt>核心能力</dt><dd>视频解析、格式选择、视频下载、字幕导出、AI 大纲、思维导图、字幕证据问答</dd></div>
-        <div><dt>AI 内容来源</dt><dd>视频来源方已经提供的字幕；VidNest 不上传视频音频，也不执行 ASR 音频转写</dd></div>
+        <div><dt>核心能力</dt><dd>视频解析、格式选择、视频下载、批量任务、字幕导出与翻译、AI 大纲、思维导图、字幕证据问答</dd></div>
+        <div><dt>AI 内容来源</dt><dd>优先使用视频来源方提供的字幕；无字幕时可在服务器本地临时转录公开音频，完成后删除临时音频</dd></div>
         <div><dt>已验证平台</dt><dd>Bilibili、AcFun、虎牙视频的公开样本</dd></div>
-        <div><dt>数据保留</dt><dd>任务、总结和临时文件仅短期保存在内存或临时目录，默认约 2 小时后清理</dd></div>
+        <div><dt>数据保留</dt><dd>视频任务、总结和临时文件默认约 2 小时后清理；账号、订单、会员状态和支付事件保存在部署方的 SQLite 数据库</dd></div>
         <div><dt>产品主体</dt><dd>VidNest；开发者：咸蛋黄；联系邮箱：senwei0521@gmail.com</dd></div>
         <div><dt>信息更新时间</dt><dd><time datetime="2026-09-20">2026 年 9 月 20 日</time></dd></div>
       </dl>
@@ -131,11 +131,11 @@ import {
         </details>
         <details>
           <summary>AI 视频总结需要什么条件？</summary>
-          <p>视频必须提供 VidNest 能读取的字幕轨道，并且部署环境已配置 AI 模型服务。没有字幕时仍可使用正常的视频解析和下载功能。</p>
+          <p>AI 总结属于 VIP 权益，部署环境需要配置 DeepSeek；视频没有字幕时可使用本地 Whisper 临时转录公开音频。</p>
         </details>
         <details>
           <summary>VidNest 会上传视频或保存长期历史吗？</summary>
-          <p>不会上传视频音频用于转写。当前版本没有账号、数据库或持久历史；解析任务、AI 总结和临时下载文件默认约 2 小时后清理。</p>
+          <p>临时媒体与 AI 任务默认约 2 小时后清理。账号、订单和会员状态会持久保存；支付由 Stripe 处理，VidNest 不接触或保存银行卡信息。</p>
         </details>
         <details>
           <summary>使用 VidNest 下载视频是否合法？</summary>
@@ -143,7 +143,7 @@ import {
         </details>
         <details>
           <summary>VidNest 当前是否需要注册或付费？</summary>
-          <p>当前版本无需注册账号，也没有支付功能。实际部署方仍可根据服务器资源设置文件大小、并发量或使用频率限制。</p>
+          <p>基础下载可以匿名使用，每日 5 次且最高 720P。购买 VIP 需要邮箱账号；VIP 提供一次性 30 天和月度自动续费两种 Stripe 支付方式。</p>
         </details>
       </div>
     </section>

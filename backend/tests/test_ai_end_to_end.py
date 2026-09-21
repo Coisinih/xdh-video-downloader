@@ -1,4 +1,6 @@
 import asyncio
+import secrets
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -58,6 +60,16 @@ async def test_ai_learning_api_flow_with_mocked_external_services(monkeypatch):
     try:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            email = f"ai-{secrets.token_hex(6)}@example.com"
+            registered = await client.post("/api/v1/auth/register", json={"email": email, "password": "StrongPass9!"})
+            assert registered.status_code == 201
+            user_id = registered.json()["id"]
+            csrf = registered.json()["csrf_token"]
+            app.state.database.execute(
+                "INSERT INTO billing_subscriptions(stripe_subscription_id, user_id, status, current_period_end, updated_at) VALUES (?, ?, 'active', ?, ?)",
+                (f"sub-{user_id}", user_id, (datetime.now(UTC) + timedelta(days=30)).isoformat(), datetime.now(UTC).isoformat()),
+            )
+            write_headers = {"X-CSRF-Token": csrf}
             tracks = await client.get(f"/api/v1/ai/inspections/{inspection.id}/subtitle-tracks")
             assert tracks.status_code == 200
             assert tracks.json()["tracks"][0]["id"] == track.public.id
@@ -76,7 +88,7 @@ async def test_ai_learning_api_flow_with_mocked_external_services(monkeypatch):
             assert downloaded_text.headers["content-type"].startswith("text/plain")
             assert downloaded_text.text == "这是第一个知识点\n这是第二个知识点\n"
 
-            created = await client.post("/api/v1/ai/summaries", json={"inspection_id": inspection.id, "subtitle_id": track.public.id})
+            created = await client.post("/api/v1/ai/summaries", headers=write_headers, json={"inspection_id": inspection.id, "subtitle_id": track.public.id})
             assert created.status_code == 200
             summary_id = created.json()["id"]
             await asyncio.sleep(0)
@@ -86,11 +98,11 @@ async def test_ai_learning_api_flow_with_mocked_external_services(monkeypatch):
             assert completed.json()["result"]["mermaid"].startswith("mindmap")
             assert completed.json()["stream_text"] == "# 实时摘要\n"
 
-            asked = await client.post(f"/api/v1/ai/summaries/{summary_id}/questions", json={"question": "核心是什么？"})
+            asked = await client.post(f"/api/v1/ai/summaries/{summary_id}/questions", headers=write_headers, json={"question": "核心是什么？"})
             assert asked.status_code == 200
             assert asked.json()["citations"] == [{"start": 0, "end": 5}]
 
-            cleared = await client.delete(f"/api/v1/ai/summaries/{summary_id}/questions")
+            cleared = await client.delete(f"/api/v1/ai/summaries/{summary_id}/questions", headers=write_headers)
             assert cleared.status_code == 204
             assert ai_store.tasks[summary_id].questions == []
     finally:
