@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { BotMessageSquare, BrainCircuit, ClipboardCopy, Download, Expand, FileText, GitBranch, Languages, ListTree, LoaderCircle, MessageCircleQuestion, RefreshCw, Send, Sparkles, X } from 'lucide-vue-next'
 import { askSummaryQuestion, clearSummaryQuestions, createSummary, downloadSubtitle as fetchSubtitleFile, getSubtitleTracks, getSummary, getTranscript, streamSummary, translateSubtitle, type Answer, type Inspection, type MindMapNode, type SubtitleDownloadFormat, type SubtitleTrack, type SummaryTask, type TranscriptCue } from '../api'
 
-const props = withDefaults(defineProps<{ inspection: Inspection; autoStart?: boolean }>(), { autoStart: true })
+const props = withDefaults(defineProps<{ inspection: Inspection; autoStart?: boolean; vip?: boolean }>(), { autoStart: true, vip: false })
 type Tab = 'summary' | 'transcript' | 'mindmap' | 'questions'
 
 const activeTab = ref<Tab>('summary')
@@ -159,7 +159,8 @@ async function generate(version = requestVersion) {
   } catch (caught) {
     if (version === requestVersion) error.value = caught instanceof Error ? caught.message : '视频大纲生成失败，请稍后重试。'
   } finally {
-    if (version === requestVersion) generating.value = false
+    // 不管成功、失败还是中途换了视频，都要把按钮恢复成可点，避免卡在"生成中"
+    generating.value = false
   }
 }
 
@@ -184,6 +185,7 @@ async function copy(value: string) {
 
 async function downloadSubtitle(format: SubtitleDownloadFormat) {
   if (!selectedTrackId.value) return
+  if (!props.vip) { error.value = '字幕文件导出为 VIP 功能，开通后即可下载 SRT / TXT。'; return }
   try {
     const blob = await fetchSubtitleFile(props.inspection.inspection_id, selectedTrackId.value, format)
     const url = URL.createObjectURL(blob)
@@ -196,6 +198,7 @@ async function downloadSubtitle(format: SubtitleDownloadFormat) {
 
 async function translateCurrentSubtitle() {
   if (!selectedTrackId.value) return
+  if (!props.vip) { transcriptError.value = 'DeepSeek 字幕翻译为 VIP 功能，开通后即可使用。'; return }
   translating.value = true; transcriptError.value = ''
   try {
     translatedCues.value = (await translateSubtitle(props.inspection.inspection_id, selectedTrackId.value, targetLanguage.value)).cues
@@ -345,7 +348,8 @@ onBeforeUnmount(() => { markmap?.destroy?.(); fullscreenMarkmap?.destroy?.(); wi
       </template>
 
       <template v-else>
-        <div v-if="!isComplete" class="ai-placeholder"><MessageCircleQuestion :size="26" aria-hidden="true" /><p>完成 AI 总结后，即可针对视频内容提问。</p></div>
+        <div v-if="!vip" class="ai-placeholder"><MessageCircleQuestion :size="26" aria-hidden="true" /><p>视频问答为 VIP 功能，开通后即可基于字幕证据提问。</p></div>
+        <div v-else-if="!isComplete" class="ai-placeholder"><MessageCircleQuestion :size="26" aria-hidden="true" /><p>完成 AI 总结后，即可针对视频内容提问。</p></div>
         <template v-else>
           <div v-if="answers.length" class="conversation"><article v-for="item in answers" :key="item.answer.created_at" class="answer"><p class="question">{{ item.question }}</p><p>{{ item.answer.answer }}</p><small v-if="item.answer.citations.length">字幕依据：{{ item.answer.citations.map(c => `${timestamp(c.start)}-${timestamp(c.end)}`).join('，') }}</small></article></div>
           <form class="question-form" @submit.prevent="ask"><label class="sr-only" for="ai-question">针对视频内容提问</label><input id="ai-question" v-model="question" :disabled="asking" maxlength="1000" placeholder="例如：这个视频最重要的结论是什么？"><button class="ai-primary" type="submit" :disabled="asking || !question.trim()"><LoaderCircle v-if="asking" class="spin" :size="15" aria-hidden="true" /><Send v-else :size="15" aria-hidden="true" />发送</button></form>

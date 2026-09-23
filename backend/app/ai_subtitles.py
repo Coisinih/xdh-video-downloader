@@ -37,6 +37,15 @@ def _environment() -> dict[str, str]:
     return environment
 
 
+def _bilibili_bvid(source_url: str) -> str | None:
+    """从链接里取出 BV 号（不依赖 yt-dlp 的返回值）。"""
+    host = (urlparse(source_url).hostname or "").lower()
+    if host != "bilibili.com" and not host.endswith(".bilibili.com"):
+        return None
+    match = re.search(r"\b(BV[0-9A-Za-z]{10})\b", source_url, flags=re.IGNORECASE)
+    return match.group(1) if match else None
+
+
 async def _metadata(source_url: str) -> dict:
     process = await asyncio.create_subprocess_exec(
         sys.executable, "-m", "yt_dlp", "--no-playlist", "--skip-download", "--dump-single-json", source_url,
@@ -49,6 +58,12 @@ async def _metadata(source_url: str) -> dict:
         await process.communicate()
         raise HTTPException(504, "获取字幕信息超时") from exc
     if process.returncode != 0:
+        # Bilibili 的视频页面在机房 IP 上会被 412 拒绝，但字幕仍可通过公开接口获取。
+        # 这里返回只含 BV 号的最小元数据，让下面的 Bilibili 适配器继续执行；
+        # 如果平台也没提供字幕，流程会落到"AI 音频转录"兜底。
+        bvid = _bilibili_bvid(source_url)
+        if bvid:
+            return {"id": bvid}
         raise HTTPException(422, "无法获取该视频的字幕信息")
     try:
         return json.loads(stdout)

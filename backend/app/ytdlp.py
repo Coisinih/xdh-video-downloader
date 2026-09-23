@@ -231,9 +231,186 @@ async def _douyin_public_inspect(url: str):
     return _douyin_result(items[0], video_id)
 
 
+def is_bilibili_url(url: str) -> bool:
+    host = _host(url)
+    return host == "bilibili.com" or host.endswith(".bilibili.com")
+
+
+def _bilibili_bvid(url: str) -> str | None:
+    match = re.search(r"\b(BV[0-9A-Za-z]{10})\b", url, flags=re.IGNORECASE)
+    return match.group(1) if match else None
+
+
+# Bilibili 的清晰度 id 与展示名称的对应关系
+BILIBILI_QUALITY_LABELS = {16: "360P", 32: "480P", 64: "720P", 80: "1080P", 112: "1080P+", 120: "4K"}
+
+
+async def _bilibili_public_inspect(url: str):
+    """Bilibili public adapter: datacenter IPs are refused (HTTP 412) when the
+    video page is fetched, so the public view and playurl endpoints are used
+    instead. No account cookie, no captcha or challenge solving is involved.
+
+    fnval=0 with platform=html5 makes the endpoint return a single muxed MP4
+    (video+audio), which the existing direct_sources delivery path already
+    supports for both browser delivery and server-side downloads.
+    """
+    bvid = _bilibili_bvid(url)
+    if not bvid:
+        return None
+    headers = {**PUBLIC_BROWSER_HEADERS, "Referer": "https://www.bilibili.com/"}
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=15) as client:
+            view_response = await client.get("https://api.bilibili.com/x/web-interface/view", params={"bvid": bvid})
+            view_response.raise_for_status()
+            view = view_response.json()
+            if view.get("code") != 0 or not isinstance(view.get("data"), dict):
+                return None
+            data = view["data"]
+            cid = _optional_int(data.get("cid"))
+            pages = data.get("pages") if isinstance(data.get("pages"), list) else []
+            if not cid and pages and isinstance(pages[0], dict):
+                cid = _optional_int(pages[0].get("cid"))
+            if not cid:
+                return None
+
+            async def playurl(quality: int) -> dict | None:
+                response = await client.get(
+                    "https://api.bilibili.com/x/player/playurl",
+                    params={"bvid": bvid, "cid": cid, "qn": quality, "fnval": 0, "platform": "html5", "high_quality": 1},
+                )
+                response.raise_for_status()
+                payload = response.json()
+                if payload.get("code") != 0 or not isinstance(payload.get("data"), dict):
+                    return None
+                return payload["data"]
+
+            first = await playurl(64)
+            if not first:
+                return None
+            streams: dict[int, dict] = {}
+            streams[_optional_int(first.get("quality")) or 64] = first
+            # accept_quality only lists the tiers anonymous visitors may use
+            # (1080P and above require a Bilibili login). Ask for each of them
+            # so the quality picker can offer every actually available option.
+            allowed = first.get("accept_quality") if isinstance(first.get("accept_quality"), list) else []
+            for requested in [item for item in allowed if item in BILIBILI_QUALITY_LABELS][:3]:
+                if requested in streams:
+                    continue
+                extra = await playurl(requested)
+                if not extra:
+                    continue
+                streams.setdefault(_optional_int(extra.get("quality")) or requested, extra)
+    except (httpx.HTTPError, ValueError):
+        return None
+    formats: list[FormatInfo] = []
+    sources: dict[str, tuple[str, dict[str, str]]] = {}
+    for quality_id in sorted(streams, reverse=True):
+        segments = streams[quality_id].get("durl") if isinstance(streams[quality_id].get("durl"), list) else []
+        # Only single-file responses are handled here; multi-segment videos keep
+        # using the original yt-dlp path so behaviour stays predictable.
+        if len(segments) != 1 or not isinstance(segments[0], dict) or not segments[0].get("url"):
+            continue
+        label = BILIBILI_QUALITY_LABELS.get(quality_id, f"{quality_id}P")
+        format_id = f"bilibili-{quality_id}"
+        formats.append(
+            FormatInfo(
+                id=format_id,
+                label=label,
+                ext="mp4",
+                resolution=label,
+                filesize=segments[0].get("size"),
+                codec="h264",
+                direct_available=True,
+            )
+        )
+        sources[format_id] = (str(segments[0]["url"]), headers)
+    if not formats:
+        return None
+    owner = data.get("owner") if isinstance(data.get("owner"), dict) else {}
+    stats = data.get("stat") if isinstance(data.get("stat"), dict) else {}
+    return (
+        _optional_text(data.get("title")) or f"Bilibili 视频 {bvid}",
+        _optional_text(data.get("pic")),
+        _optional_int(data.get("duration")),
+        _optional_text(owner.get("name")),
+        _optional_text(data.get("desc")),
+        "Bilibili",
+        _optional_int(stats.get("view")),
+        formats,
+        sources,
+    )
+
+
+async def fetch_bilibili_audio(source_url: str, output_dir: Path) -> Path | None:
+    """Download a Bilibili audio track for local transcription.
+
+    The video page is refused (HTTP 412) for datacenter IPs, so the public
+    playurl endpoint is used to pick the highest-bitrate audio-only stream.
+    Returns None when the public endpoint has nothing usable, letting the
+    caller fall back to its original yt-dlp path.
+    """
+    from .security import validate_source_url
+
+    bvid = _bilibili_bvid(source_url)
+    if not bvid:
+        return None
+    headers = {**PUBLIC_BROWSER_HEADERS, "Referer": "https://www.bilibili.com/"}
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=15) as client:
+            view = (await client.get("https://api.bilibili.com/x/web-interface/view", params={"bvid": bvid})).json()
+            cid = _optional_int(((view.get("data") or {}) if isinstance(view.get("data"), dict) else {}).get("cid"))
+            if not cid:
+                return None
+            play = (
+                await client.get(
+                    "https://api.bilibili.com/x/player/playurl",
+                    params={"bvid": bvid, "cid": cid, "qn": 64, "fnval": 16, "fourk": 1},
+                )
+            ).json()
+    except (httpx.HTTPError, ValueError):
+        return None
+    dash = ((play.get("data") or {}) if isinstance(play.get("data"), dict) else {}).get("dash") or {}
+    tracks = dash.get("audio") if isinstance(dash.get("audio"), list) else []
+    if not tracks:
+        return None
+    best = max(tracks, key=lambda item: _optional_int(item.get("bandwidth")) or 0)
+    media_url = str(best.get("baseUrl") or best.get("base_url") or "")
+    if not media_url:
+        return None
+    validate_source_url(media_url)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    destination = output_dir / "audio.m4s"
+    limit = settings.max_file_size_mb * 1024 * 1024
+    written = 0
+    try:
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=settings.download_timeout_seconds) as client:
+            async with client.stream("GET", media_url) as response:
+                response.raise_for_status()
+                with destination.open("wb") as handle:
+                    async for chunk in response.aiter_bytes():
+                        written += len(chunk)
+                        if written > limit:
+                            raise HTTPException(413, "音频文件超过转录大小限制。")
+                        handle.write(chunk)
+    except httpx.HTTPError:
+        destination.unlink(missing_ok=True)
+        return None
+    except HTTPException:
+        destination.unlink(missing_ok=True)
+        raise
+    if not written:
+        destination.unlink(missing_ok=True)
+        return None
+    return destination
+
+
 async def inspect(url: str) -> tuple[str, str | None, int | None, str | None, str | None, str | None, int | None, list[FormatInfo], dict[str, tuple[str, dict[str, str]]]]:
     if is_douyin_url(url):
         public_result = await _douyin_public_inspect(url)
+        if public_result:
+            return public_result
+    if is_bilibili_url(url):
+        public_result = await _bilibili_public_inspect(url)
         if public_result:
             return public_result
     stdout, _ = await run_command(

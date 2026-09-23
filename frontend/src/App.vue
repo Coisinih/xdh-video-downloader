@@ -120,7 +120,8 @@ onMounted(refreshUser)
         <div class="examples"><span>试试：</span><button type="button" @click="url = 'https://www.bilibili.com/video/BV1DAgS6SEqa'">B 站</button><button type="button" @click="url = 'https://www.acfun.cn/v/ac35457073'">AcFun</button><button type="button" @click="url = 'https://www.huya.com/video/play/1002412640.html'">虎牙</button><button class="paste-link" type="button" @click="paste"><Clipboard :size="14" />粘贴链接</button></div>
       </section>
       <p class="helper"><ShieldCheck :size="15" /> 仅下载你有权保存且无需登录的公开内容。</p>
-      <p v-if="user && !user.membership.is_vip" class="quota-note">今日还可免费下载 {{ user.remaining_free_downloads }} 次，最高 720P。</p>
+      <p v-if="user && !user.membership.is_vip" class="quota-note">已登录：下载不限次数（最高 720P），每日可做 3 次 AI 总结。</p>
+      <p v-else-if="!user" class="quota-note">未登录每日可免费下载 5 次（最高 720P）；登录后不限次数下载。</p>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
     </section>
 
@@ -160,7 +161,7 @@ onMounted(refreshUser)
         <button class="primary download" type="button" :disabled="pending" @click="startDownload"><Download :size="18" />浏览器下载</button>
       </section>
 
-      <AiLearningWorkspace v-if="user?.membership.is_vip" :inspection="inspection" />
+      <AiLearningWorkspace v-if="user" :inspection="inspection" :vip="user.membership.is_vip === true" />
       <section v-else class="ai-vip-lock" aria-label="VIP AI 功能"><Crown :size="28" aria-hidden="true" /><h2>开通 VIP 解锁 AI 视频学习助手</h2><p>包含字幕下载与翻译、视频大纲、思维导图和字幕证据问答。</p><a href="#pricing">查看会员方案</a></section>
     </section>
 

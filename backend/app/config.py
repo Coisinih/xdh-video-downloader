@@ -19,7 +19,10 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 30 * 24 * 60 * 60
     session_cookie_secure: bool = False
     frontend_url: str = "http://localhost:8080"
+    # 已废弃：2026-09 起登录用户（含免费用户）下载不限次数，仅保留字段兼容旧配置
     free_daily_downloads: int = 5
+    # 非 VIP 用户每日可用的 AI 总结次数
+    free_daily_ai_summaries: int = 3
     free_max_height: int = 720
     batch_max_items: int = 10
     stripe_secret_key: str = ""

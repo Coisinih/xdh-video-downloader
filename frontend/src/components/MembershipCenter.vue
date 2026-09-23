@@ -93,21 +93,21 @@ onMounted(async () => { await loadBilling(); await handlePaymentReturn() })
     <header class="membership-heading">
       <p>简单透明的会员方案</p>
       <h2 id="pricing-title">选择适合你的视频下载方案</h2>
-      <span>免费版满足日常使用，VIP 解锁高画质、批量下载和完整 AI 能力</span>
+      <span>免费版满足日常下载与 AI 试用，VIP 解锁高画质、批量下载与不限次数 AI</span>
     </header>
     <p v-if="message" class="membership-message" role="status">{{ message }}</p>
     <p v-if="error" class="membership-error" role="alert">{{ error }}</p>
     <div class="pricing-grid">
       <article class="pricing-card free-card">
-        <h3>免费版</h3><p>满足基础下载需求</p><strong class="price">¥0 <small>/永久</small></strong>
-        <ul><li><Check :size="18" />每日 5 次免费下载</li><li><Check :size="18" />最高支持 720P 清晰度</li><li><Check :size="18" />支持 1800+ 公开平台</li><li><Check :size="18" />基础视频信息解析</li></ul>
+        <h3>免费版</h3><p>登录后即可不限次数下载</p><strong class="price">¥0 <small>/永久</small></strong>
+        <ul><li><Check :size="18" />未登录每日 5 次免费下载</li><li><Check :size="18" />登录后不限次数下载</li><li><Check :size="18" />每日 3 次 AI 总结</li><li><Check :size="18" />最高支持 720P 清晰度</li></ul>
         <button type="button" disabled>{{ isVip ? 'VIP 已生效' : '当前方案' }}</button>
       </article>
       <article class="pricing-card vip-card">
         <span class="recommended"><Flame :size="14" />推荐</span>
         <h3>VIP 高级版</h3><p>解锁全部功能，无限制使用</p><strong class="price">¥9.9 <small>/ {{ autoRenew ? '月' : '30 天' }}</small></strong>
         <label class="renew-option"><input v-model="autoRenew" type="checkbox" :disabled="isVip"><span>自动续费（月度订阅，可随时取消）</span></label>
-        <ul><li><Check :size="18" />无限次数下载</li><li><Check :size="18" />最高支持 4K / 8K 画质</li><li><Check :size="18" />批量下载，一键创建任务</li><li><Check :size="18" />字幕下载与 DeepSeek 翻译</li><li><Check :size="18" />AI 视频内容总结与问答</li><li><Check :size="18" />专属客服工单支持</li></ul>
+        <ul><li><Check :size="18" />AI 总结与视频问答不限次数</li><li><Check :size="18" />最高支持 4K / 8K 画质</li><li><Check :size="18" />批量下载，一键创建任务</li><li><Check :size="18" />字幕下载与 DeepSeek 翻译</li><li><Check :size="18" />专属客服工单支持</li></ul>
         <button v-if="!isVip" type="button" :disabled="paying" @click="buy"><LoaderCircle v-if="paying" class="spin" :size="17" /><Crown v-else :size="17" />{{ paying ? '正在前往 Stripe…' : '立即开通 VIP' }}</button>
         <button v-else-if="user?.membership.source === 'subscription'" class="active-vip" type="button" :disabled="managing" @click="portal"><RefreshCw :size="17" />{{ managing ? '正在打开…' : '管理会员与自动续费' }}</button>
         <button v-else class="active-vip" type="button" disabled><Crown :size="17" />30 天 VIP 已生效</button>

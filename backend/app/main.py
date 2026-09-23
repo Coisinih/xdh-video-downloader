@@ -141,8 +141,10 @@ async def create_download(
         raise HTTPException(403, "免费版最高支持 720P，开通 VIP 可下载 4K / 8K")
     safe_request_key = request_key if request_key and 16 <= len(request_key) <= 100 else store.token()
     if user:
+        # 登录用户（含免费用户）不限次数下载
         consume_download(request.app.state.database, user.id, safe_request_key)
     else:
+        # 未登录用户每天有免费额度（默认 5 次）
         client_address = request.headers.get("x-real-ip") or (request.client.host if request.client else "unknown")
         consume_anonymous_download(request.app.state.database, client_address, safe_request_key)
     if payload.mode == DownloadMode.direct and selected.direct_available:

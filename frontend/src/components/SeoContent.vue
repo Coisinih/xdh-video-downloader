@@ -143,7 +143,7 @@ import {
         </details>
         <details>
           <summary>VidNest 当前是否需要注册或付费？</summary>
-          <p>基础下载可以匿名使用，每日 5 次且最高 720P。购买 VIP 需要邮箱账号；VIP 提供一次性 30 天和月度自动续费两种 Stripe 支付方式。</p>
+          <p>未登录每日可免费下载 5 次（最高 720P）；登录后下载不限次数，并每日可使用 3 次 AI 总结。购买 VIP 需要邮箱账号；VIP 提供一次性 30 天和月度自动续费两种 Stripe 支付方式。</p>
         </details>
       </div>
     </section>

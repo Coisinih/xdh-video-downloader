@@ -29,6 +29,11 @@ _MODEL_REPOSITORIES = {
 
 
 async def _download_audio(source_url: str, work_dir: Path) -> Path:
+    # Bilibili 的视频页面在机房 IP 上会被 412 拒绝（yt-dlp 取不到音频），
+    # 所以优先走公开接口的 dash 音轨；其他平台或接口不可用时回落到 yt-dlp。
+    public_audio = await ytdlp.fetch_bilibili_audio(source_url, work_dir)
+    if public_audio:
+        return public_audio
     output_template = str(work_dir / "audio.%(ext)s")
     await ytdlp.run_command(
         ytdlp.ytdlp_command(
